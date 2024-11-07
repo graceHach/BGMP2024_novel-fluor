@@ -19,6 +19,7 @@ args = get_args()
 
 not_20_bp = 0
 # read in intermmediate file, initialize the dictionary
+print("initializing counts dict")
 counts = {} 
 # keys are UMIs, values are numpy arrays with nine entries
 with open(args.temp_file) as fh:
@@ -30,25 +31,22 @@ with open(args.temp_file) as fh:
             not_20_bp += 1
 
 # will entries come out the same way they come in?
-help=[]
 # read in files, hash to a dictionary keyed by sequence
 files = glob.glob(args.in_dir+"*.fastq.gz")
 for file_index, file in enumerate(files):
     with gzip.open(file, 'rt') as fh:
         for index, line in enumerate(fh):
             if index%4==1:
-                help.append(line[:-1])
                 if line[:-1] in counts:
                     counts[line[:-1]][file_index] += 1
 
 # write list of file names as header of file
 header_line = "Barcode\t" + '\t'.join(files) + "\n"
 
+print("Starting writing")
 keys = counts.keys()
 with open(args.out_file, 'wt') as fh_out:
     fh_out.write(header_line)
     for key in keys:
         write_string = key + "\t" + np.array2string(counts[key], separator='\t')[1:-1] + "\n"
         fh_out.write(write_string)
-
-# 
