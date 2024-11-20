@@ -91,22 +91,22 @@ counts_columns = list(in_df.columns)[1:n_bins+1]
 # add fold change columns by normalizing using totalfrac
 for col in counts_columns:
     in_df[col+"_fc"] = in_df[col]/in_df["totalfrac"]
-print(in_df.columns)
+#print(in_df.columns)
 
 # add A matrix by normalizing each fc column by rowsum of all fc columns
 fc_columns = sorted(list(in_df.columns)[n_bins+3:])
-print(fc_columns)
+#print(fc_columns)
 # axis=1 sums across rows 
 in_df["rowsum"] = in_df[fc_columns].sum(axis=1)
 for index, fc_col in enumerate(fc_columns):
     in_df["A"+str(index+1)] = in_df[fc_col]/in_df['rowsum']
-print(in_df.columns)
+#print(in_df.columns)
 
 # Create new dataframe proteinAcs, or the A columns, but as cumulative sums of current and prev columns
 cumulative_As = pd.DataFrame()
 A_cols = ["A"+str(i) for i in range(1,n_bins+1)]
 for i in range(1,n_bins+1):
-    print(A_cols[0:i])
+    #print(A_cols[0:i])
     cumulative_As["A_"+str(i)+"_cs"] = in_df[A_cols[0:i]].sum(axis=1)
 
 # get vectors of the row indices that bookend 0.5 
@@ -117,10 +117,6 @@ upper_indices = mincs(cumulative_As)
 # modify in_df to add lower_index, upper_index, median column
 # is cumulative p the same as cumulative_As?
 # lower_indices and upper_indices have None values 
-print(cumulative_As)
-print(sum([1 for x in lower_indices if not x]))
-print(len(lower_indices))
-#print(sum(np.isnan(upper_indices)))
 
 in_df["lower_index"] = lower_indices
 in_df["upper_index"] = upper_indices
@@ -130,6 +126,6 @@ out_df = pd.DataFrame()
 out_df["protein"] = in_df["protein"]
 out_df["median"]= calc_median(cumulative_As,upper_indices,lower_indices)
 
-out_df.to_csv(args.out_file, index=False)
+out_df.to_csv(args.out_file, index=False, sep="\t")
 
-print(out_df)
+#print(out_df)
