@@ -35,13 +35,15 @@ for file_index, file in enumerate(files_list):
                     if line[:-1] in counts:
                         counts[line[:-1]][file_index] += 1
                     else:
-                        counts[line[:-1]] = np.zeros(9, dtype="int8")
+                        # I USED INT8 INITIALLY AND IT FRICKING UNDERFLOWED AND HALF THE NUMBERS WERE NEGATIVE AAAAAUGH
+                        # 4.5 HOUR RUNTIME 
+                        counts[line[:-1]] = np.zeros(9, dtype="int64")
                         counts[line[:-1]][file_index] = 1
                 else:
                     not_20_bp += 1
 
 # write list of file names as header of file
-header_line = "Barcode\t" + '\t'.join(files) + "\n"
+header_line = "Barcode\t" + '\t'.join(files_list) + "\n"
 
 print("Starting writing")
 keys = counts.keys()

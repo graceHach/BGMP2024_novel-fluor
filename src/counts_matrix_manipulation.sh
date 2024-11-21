@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "The truth will set you free. But not until it is finished with you."
+
 in_file="../../../shared/dat/counts_per_bin/blue_prot_counts.tsv"
 out_file="../../../shared/dat/counts_per_bin/blue_median_bin.tsv"
 
