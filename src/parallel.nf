@@ -8,31 +8,93 @@ params.in_dir_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/shared/uploa
 params.in_dir_red = "/projects/bgmp/shared/groups/2024/novel-fluor/shared/upload/BGMP_2024/RED/NovaSeq_GC3F_7124/"
 params.out_dir_merge_blue = "illu-dat/NovaSeq_merged/blue/"
 params.out_dir_merge_red = "illu-dat/NovaSeq_merged/red/"
-params.out_dir_trim_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/blue_illum/"
-params.out_dir_trim_red = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/red_illum/"
-params.forward_primers = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/CVR205stub_FWD.fasta"
-params.reverse_primers = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/CVR205stub_REV.fasta"
+params.out_dir_trim_blue = "illu-dat/primer_trimmed/blue/"
+params.out_dir_trim_red = "illu-dat/primer_trimmed/red/"
+params.hts_primers_report = "../reports/hts_primers_reports.txt"
+params.forward_primers = "../primers/CVR205stub_FWD.fasta"
+params.reverse_primers = "../primers/CVR205stub_REV.fasta"
 
 
 
+process merge_reads_red {
 
-
-process merge_reads {
-
+    publishDir path: "${params.out_dir_merge_red}", mode: 'copy', overwrite: true
     cpus 8
 
     input:
     tuple val(key), path(read1_path), path(read2_path)
-    path path_out
 
     output:
-    path "${path_out}${key}_MERGED.fastq"
+    path "${key}_MERGED.fastq"
     
     script:
     """
-    mkdir -p ${path_out}
     conda activate bbmerge
-    bbmerge.sh -in1=${read1_path} -in2=${read2_path} -out="${path_out}${key}_MERGED.fastq" \
+    bbmerge.sh -in1=${read1_path} -in2=${read2_path} -out="${key}_MERGED.fastq" \
+    -outu1="${key}_R1_REJCETED.fastq" -outu2="${key}_R2_REJCETED.fastq" 
+    """
+}
+
+process merge_reads_blue {
+
+    publishDir path: "${params.out_dir_merge_blue}", mode: 'copy', overwrite: true
+    cpus 8
+
+    input:
+    tuple val(key), path(read1_path), path(read2_path)
+
+    output:
+    path "${key}_MERGED.fastq"
+    
+    script:
+    """
+    conda activate bbmerge
+    bbmerge.sh -in1=${read1_path} -in2=${read2_path} -out="${key}_MERGED.fastq" \
+    -outu1="${key}_R1_REJCETED.fastq" -outu2="${key}_R2_REJCETED.fastq" 
+    """
+}
+
+process trim_reads_red {
+
+    publishDir path: "${params.params.out_dir_trim_red}", mode: 'copy', overwrite: true
+    //publishDir '.', saveAs: { it == "*.fastq.gz" ? "${params.params.out_dir_trim_red}${it}" : "${params.hts_primers_report}${it}" }
+
+    input:
+    path input_fasta_path
+    val forward_primers
+    val reverse_primers
+
+    output:
+    path "*_TRIMMED.fastq.gz"
+    //trimmed_filename=\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')
+    
+    script:
+    """
+    conda activate htstream
+    hts_Primers -U "${input_fasta_path}" -f "\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')_TRIMMED" \
+    -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
+    """
+}
+
+process trim_reads_blue {
+
+    publishDir path: "${params.params.out_dir_trim_blue}", mode: 'copy', overwrite: true
+    //publishDir '.', saveAs: { it == "*.fastq.gz" ? "${params.params.out_dir_trim_red}${it}" : "${params.hts_primers_report}${it}" }
+
+    input:
+    path input_fasta_path
+    val forward_primers
+    val reverse_primers
+
+    output:
+    path "*_TRIMMED.fastq.gz"
+    //trimmed_filename=\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')
+    
+    script:
+    """
+    conda activate htstream
+    hts_Primers -U "${input_fasta_path}" -f "\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')_TRIMMED" \
+    -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
 
@@ -41,20 +103,26 @@ process merge_reads {
 
 workflow {
 
-    // Channel
-    // .fromPath("${params.in_dir_red}*.fastq") 
-    // .set { red_input_files }
+     // Create input channels for blue and red umerged datasets
     blue_files_ch = Channel.fromFilePairs("${params.in_dir_blue}*_{R1,R2}.fastq.gz", flat: true)
-    red_merge_out = Channel.fromPath("${params.out_dir_merge_blue}")
-        
-        //.map { tuple(it.key, it.value[0], it.value[1]) } // (baseName, R1, R2)
-
     red_files_ch = Channel.fromFilePairs("${params.in_dir_red}*_{R1,R2}*.fastq.gz", flat: true)
-    red_merge_out = Channel.fromPath("${params.out_dir_merge_red}")
-    
-    merge_reads(red_files_ch, red_merge_out)
-    merge_reads(blue_files_ch, blue_merge_out)
-    //merge_reads(blue_files_ch)
-    //help_me()
+
+    // Merge
+    merge_reads_red(red_files_ch)
+    merge_reads_blue(red_files_ch)
+
+    // Create input channels to trim merged reads
+    // blue_files_ch = Channel.fromPath("${params.out_dir_merge_blue}*_MERGED.fastq")
+    // red_files_ch = Channel.fromPath("${params.out_dir_merge_red}*_MERGED.fastq")
+
+    // VALUES, not paths to preserve directory structure
+    forward_primers = Channel.of("${params.forward_primers}")
+    reverse_primers = Channel.of("${params.reverse_primers}")
+
+    trim_reads_red(merge_reads_red.out, forward_primers, reverse_primers)
+    trim_reads_blue(merge_reads_blue.out, forward_primers, reverse_primers)
+
+
+
 
 }
