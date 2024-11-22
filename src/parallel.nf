@@ -65,13 +65,13 @@ process trim_reads_red {
     val reverse_primers
 
     output:
-    path "*_TRIMMED.fastq.gz"
+    path "*_TRIMMED_SE.fastq.gz"
     //trimmed_filename=\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')
     
     script:
     """
     conda activate htstream
-    hts_Primers -U "${input_fasta_path}" -f "\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')_TRIMMED" \
+    hts_Primers -U "${input_fasta_path}" -f "{sed 's/_MERGED.fastq/_TRIMMED/' "${input_fasta_path}"}" \
     -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
@@ -87,13 +87,13 @@ process trim_reads_blue {
     val reverse_primers
 
     output:
-    path "*_TRIMMED.fastq.gz"
+    path "*_TRIMMED_SE.fastq.gz"
     //trimmed_filename=\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')
     
     script:
     """
     conda activate htstream
-    hts_Primers -U "${input_fasta_path}" -f "\$(basename "${input_fasta_path}" | sed 's/_MERGED.fastq//')_TRIMMED" \
+    hts_Primers -U "${input_fasta_path}" -f "{sed 's/_MERGED.fastq/_TRIMMED/' "${input_fasta_path}"}" \
     -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
@@ -104,7 +104,7 @@ process trim_reads_blue {
 workflow {
 
      // Create input channels for blue and red umerged datasets
-    blue_files_ch = Channel.fromFilePairs("${params.in_dir_blue}*_{R1,R2}.fastq.gz", flat: true)
+    blue_files_ch = Channel.fromFilePairs("${params.in_dir_blue}*_{R1,R2}*.fastq.gz", flat: true)
     red_files_ch = Channel.fromFilePairs("${params.in_dir_red}*_{R1,R2}*.fastq.gz", flat: true)
 
     // Merge
