@@ -28,7 +28,7 @@ for file in "${the_files[@]}"; do
     sliced_filename=${file##${source_dir1}}
     echo "processing ${file}"
     hts_Primers -U ${file} -f "${destination_dir1}${sliced_filename%%_MERGED*}" \
-   -P ${forward_primers} -Q ${reverse_primers} -l 5 -x -e 6 -d 6 -L "../reports/hts_primers_output_BLUE" -F
+   -P ${forward_primers} -Q ${reverse_primers} -l 5 -x -e 6 -d 6 -L "../reports/hts_primers_output/${sliced_filename}" -F
 done
 
 echo "Blue complete."
@@ -39,5 +39,5 @@ for file in "${the_files[@]}"; do
     sliced_filename=${file##${source_dir2}}
     echo "processing ${file}"
     hts_Primers -U ${file} -f "${destination_dir2}${sliced_filename%%_MERGED*}" \
-   -P ${forward_primers} -Q ${reverse_primers} -l 5 -x -e 6 -d 6 -L "../reports/hts_primers_output_RED" -F
+   -P ${forward_primers} -Q ${reverse_primers} -l 5 -x -e 6 -d 6 -L "../reports/hts_primers_output/${sliced_filename}" -F
 done
