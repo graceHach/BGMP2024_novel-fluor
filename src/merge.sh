@@ -25,6 +25,8 @@ destination_dir1="/projects/bgmp/shared/groups/2024/novel-fluor/shared/upload/No
 destination_dir2="/projects/bgmp/shared/groups/2024/novel-fluor/shared/upload/NovaSeq_merged/red/" 
 # Read in file names in pairs
 # Why is this in quotes
+# Why isn't this prefaced with $
+# BECAUSE $() IS COMMAND SUBSITUTION
 the_files=("$source_dir1"*.fastq.gz)
 
 mkdir -p "$destination_dir1" 
