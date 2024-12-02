@@ -18,6 +18,7 @@ params.reverse_primers = "../primers/CVR205stub_REV.fasta"
 
 process merge_reads_red {
 
+    // Works, but only if directory already exists 
     publishDir path: "${params.out_dir_merge_red}", mode: 'copy', overwrite: true
     cpus 8
 
@@ -56,13 +57,14 @@ process merge_reads_blue {
 
 process trim_reads_red {
 
-    publishDir path: "${params.params.out_dir_trim_red}", mode: 'copy', overwrite: true
+    publishDir path: "${output_dir}", mode: 'copy', overwrite: true
     //publishDir '.', saveAs: { it == "*.fastq.gz" ? "${params.params.out_dir_trim_red}${it}" : "${params.hts_primers_report}${it}" }
 
     input:
     path input_fasta_path
     val forward_primers
     val reverse_primers
+    path output_dir
 
     output:
     path "*_TRIMMED_SE.fastq.gz"
@@ -71,20 +73,23 @@ process trim_reads_red {
     script:
     """
     conda activate htstream
-    hts_Primers -U "${input_fasta_path}" -f "{sed 's/_MERGED.fastq/_TRIMMED/' "${input_fasta_path}"}" \
+    out_file="\$(echo ${input_fasta_path} | sed s'/_MERGED.fastq/_TRIMMED/')"
+    echo "\${out_file}"
+    hts_Primers -U "${input_fasta_path}" -f "\${out_file}" \
     -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
 
 process trim_reads_blue {
 
-    publishDir path: "${params.params.out_dir_trim_blue}", mode: 'copy', overwrite: true
-    //publishDir '.', saveAs: { it == "*.fastq.gz" ? "${params.params.out_dir_trim_red}${it}" : "${params.hts_primers_report}${it}" }
+    publishDir path: "${output_dir}", mode: 'copy', overwrite: true
+    //publishDir path: "${params.params.out_dir_trim_blue}", mode: 'copy', overwrite: true DOESN'T WORK
 
     input:
     path input_fasta_path
     val forward_primers
     val reverse_primers
+    path output_dir
 
     output:
     path "*_TRIMMED_SE.fastq.gz"
@@ -93,7 +98,9 @@ process trim_reads_blue {
     script:
     """
     conda activate htstream
-    hts_Primers -U "${input_fasta_path}" -f "{sed 's/_MERGED.fastq/_TRIMMED/' "${input_fasta_path}"}" \
+    out_file="\$(echo ${input_fasta_path} | sed s'/_MERGED.fastq/_TRIMMED/')"
+    echo "\${out_file}"
+    hts_Primers -U "${input_fasta_path}" -f "\${out_file}" \
     -P "${forward_primers}" -Q "${reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
@@ -119,8 +126,14 @@ workflow {
     forward_primers = Channel.of("${params.forward_primers}")
     reverse_primers = Channel.of("${params.reverse_primers}")
 
-    trim_reads_red(merge_reads_red.out, forward_primers, reverse_primers)
-    trim_reads_blue(merge_reads_blue.out, forward_primers, reverse_primers)
+    // I think these need to be passed in via a channel
+    blue_merged_out_dir = Channel.fromPath("${params.out_dir_trim_blue}")
+    red_merged_out_dir = Channel.fromPath("${params.out_dir_trim_red}")
+    blue_merged_out = Channel.fromPath("${params.out_dir_trim_blue}")
+
+
+    trim_reads_red(merge_reads_red.out, forward_primers, reverse_primers, red_merged_out_dir)
+    trim_reads_blue(merge_reads_blue.out, forward_primers, reverse_primers, blue_merged_out_dir)
 
 
 
