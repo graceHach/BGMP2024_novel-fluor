@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# 3 IS NECESSARY FOR EXECUTATION IN NEXTFLOW
 
 import argparse
 import gzip
@@ -11,6 +12,7 @@ import numpy as np
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-i","--in_dir",type=str,help="directory containing merged, primer trimmed reads", default="/projects/bgmp/shared/groups/2024/novel-fluor/shared/dat/blue_illum/")
+    #parser.add_argument("-f","--file_list", nargs='+')
     parser.add_argument("-o","--out_file",type=str,help="", default="../reports/blue_counts_better_script.tsv")
     return parser.parse_args()
 
@@ -22,9 +24,11 @@ print("initializing counts dict", flush=True)
 counts = {} 
 # keys are UMIs, values are numpy arrays with nine entries
 
-files = glob.glob(args.in_dir+"*.fastq.gz")
+#files = glob.glob(args.in_dir+"*.fastq.gz")
 # glob puts these in a weird order 
-files_list = sorted(list(files))
+files = glob.glob(args.in_dir+"*.fastq.gz")
+# FILES LIST IS SPACE-SEPARATED LIST OF FILES
+files_list = sorted(list(args.in_dir))
 # sort the files???
 for file_index, file in enumerate(files_list):
     print("processing: ",file, flush=True)
