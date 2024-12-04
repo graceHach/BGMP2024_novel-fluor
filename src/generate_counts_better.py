@@ -27,8 +27,9 @@ counts = {}
 #files = glob.glob(args.in_dir+"*.fastq.gz")
 # glob puts these in a weird order 
 files = glob.glob(args.in_dir+"*.fastq.gz")
-# FILES LIST IS SPACE-SEPARATED LIST OF FILES
-files_list = sorted(list(args.in_dir))
+# glob puts these in a weird order 
+files_list = sorted(list(files))
+print(files_list)
 # sort the files???
 for file_index, file in enumerate(files_list):
     print("processing: ",file, flush=True)

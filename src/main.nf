@@ -108,7 +108,7 @@ process trim_reads_blue {
     conda activate htstream 
     out_file="\$(echo ${merged_blue} | sed s'/_MERGED.fastq/_TRIMMED/')"
     hts_Primers -U "${merged_blue}" -f "\${out_file}" \
-    -P "${params.forward_primers}" -Q "${params.reverse_primers}" -l 5 -x -e 6 -d 6 -F
+    -P "$baseDir/${params.forward_primers}" -Q "$baseDir/${params.reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 
 }
@@ -129,7 +129,7 @@ process trim_reads_red {
     conda activate htstream 
     out_file="\$(echo ${merged_red} | sed s'/_MERGED.fastq/_TRIMMED/')"
     hts_Primers -U "${merged_red}" -f "\${out_file}" \
-    -P "${params.forward_primers}" -Q "${params.reverse_primers}" -l 5 -x -e 6 -d 6 -F
+    -P "$baseDir/${params.forward_primers}" -Q "$baseDir/${params.reverse_primers}" -l 5 -x -e 6 -d 6 -F
     """
 }
 
