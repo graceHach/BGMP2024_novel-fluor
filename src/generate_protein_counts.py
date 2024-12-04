@@ -32,24 +32,44 @@ for file in files:
                 if not line[3] == '':
                     seq_dict[line[0]] = line[3]
 
-first = True
-with open(args.out_file, 'wt') as fo, open(args.in_tsv, 'rt') as fin:
+# Re-written to store each line in a dictionary, keyed to the aa sequence. If a duplciate aa sequence is reached,
+# the rows are added. This is fine because the normalized count list and the normalized total are fractions with a 
+# common denominator.
+
+prot_dict = {}
+# key is aa sequence, value is a list with the elements:
+# [normalized_counts_list, total_number_of_reads, normalized_total]
+with open(args.in_tsv, 'rt') as fin:
     for line in fin:
-        if first:
-            first=False
-            header=line # header contains file name
-            new_header="protein\t"+"\t".join(["bin"+str(i) for i in range(1,num_bins+1)])+"\ttotalreads\ttotalfrac\n"
-            fo.write(new_header)
-        else:
-            split = line.split(sep="\t")
-            counts_list = [int(x) for x in split[1:num_bins+1]]
-            norm_counts_list = list(map(lambda x,y: str(x/y), counts_list,col_sums))
-            total_number_of_reads = sum(counts_list)
-            noramalized_total = total_number_of_reads/grand_total
-            barcode = split[0]
-            if barcode in seq_dict:
-                write_line = seq_dict[barcode]+"\t"+"\t".join(norm_counts_list)+"\t"+str(total_number_of_reads)+"\t"+str(noramalized_total)+"\n"
-                fo.write(write_line)
+        split = line.split(sep="\t")
+        # Get a list of counts for that UMI
+        counts_list = [int(x) for x in split[1:num_bins+1]]
+        # Normalize the counts list by the total sums of each column
+        # Keep these as floats and not strings because they may need to be summed later
+        norm_counts_list = list(map(lambda x,y: x/y, counts_list,col_sums))
+        # Get the total number of each row
+        total_number_of_reads = sum(counts_list)
+        noramalized_total = total_number_of_reads/grand_total
+        barcode = split[0]
+        if barcode in seq_dict:
+            protein_sequence = seq_dict[barcode]
+            if protein_sequence in prot_dict:
+                # Duplicate encountered. Combine all entries by summing:
+                # Combine normalized_counts_list
+                prot_dict[protein_sequence][0] = [x+y for x,y in zip(prot_dict[protein_sequence][0], norm_counts_list)]
+                # Combine total number of reads
+                prot_dict[protein_sequence][1] = prot_dict[protein_sequence][1] + total_number_of_reads
+                # Combine normalized total
+                prot_dict[protein_sequence][2] = prot_dict[protein_sequence][2] + noramalized_total 
+            else:
+                # Not a duplicate sequence (so far)
+                prot_dict[protein_sequence] = [norm_counts_list, total_number_of_reads, noramalized_total]
 
-
-
+# Use dict to write out to file
+with open(args.out_file, 'wt') as fo:
+    for protein_sequence in prot_dict:
+        norm_counts_list, total_number_of_reads, noramalized_total = prot_dict[protein_sequence]
+        # Needs to be converted back to string
+        norm_counts_list = [str(x) for x in norm_counts_list]
+        write_line = protein_sequence+"\t"+"\t".join(norm_counts_list)+"\t"+str(total_number_of_reads)+"\t"+str(noramalized_total)+"\n"
+        fo.write(write_line)
