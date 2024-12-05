@@ -15,8 +15,8 @@ set -eu
 
 #######       GENERATE ILLUMINA COUNTS       #######   
 # IS THE WAY TO DO THIS IS NEXTFLOW TO HAVE THE --IN_DIR BELOW BE ITSELF A COMMAND-LINE PARAMETER?  
-./generate_counts_better.py --in_dir "/projects/bgmp/shared/groups/2024/novel-fluor/shared/dat/blue_illum/" --out_file "../reports/blue_counts.tsv"
-./generate_counts_better.py --in_dir "/projects/bgmp/shared/groups/2024/novel-fluor/shared/dat/red_illum/" --out_file "../reports/red_counts.tsv"
+#./generate_counts_better.py --in_dir "/projects/bgmp/shared/groups/2024/novel-fluor/shared/dat/blue_illum/" --out_file "../reports/blue_counts.tsv"
+#./generate_counts_better.py --in_dir "/projects/bgmp/shared/groups/2024/novel-fluor/shared/dat/red_illum/" --out_file "../reports/red_counts.tsv"
 
 #######       INCORPORATE PROTEIN SEQUENCES       ####### 
 in_tsv="../reports/blue_counts.tsv"
