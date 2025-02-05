@@ -15,8 +15,8 @@ params.rawfastqs_R12 = '/projects/bgmp/shared/groups/2024/novel-fluor/shared/raw
 //params.out_dir_counts_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/counts_blue"
 //params.out_dir_counts_red = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/counts_red"
 
-// params.forward_primers = "primers/CVR205stub_FWD.fasta"
-// params.reverse_primers = "primers/CVR205stub_REV.fasta"
+params.forward_primers = "./primers/CVR205stub_FWD.fasta"
+params.reverse_primers = "./primers/CVR205stub_REV.fasta"
 
 // params.counts_script = "src/generate_counts_better.py"
 
@@ -26,7 +26,12 @@ workflow {
 
 	// binreads = Channel.fromFilePairs( params.rawfastqs_R12 ) 
 	binreads = Channel.fromFilePairs( '/projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/NovaSeq_GC3F_7124/*_R{1,2}_001.fastq.gz' )
+
 	merge_reads( binreads ) 
+
+	merge_reads.out.merged.view()
+
+	trim_reads( merge_reads.out.merged ) 
 
     // Input channels
     // blue_files_ch = Channel.fromFilePairs("${params.in_dir_blue}/*{R1,R2}*.fastq.gz", flat: true)
@@ -72,68 +77,26 @@ process merge_reads {
 	"""
 }
 
-// Merge Reads - Blue
-//process merge_reads_blue {
-
-    //publishDir path: "${params.out_dir_merge_blue}", mode: 'copy', overwrite: true
-
-    //input:
-    //tuple val(key), path(read1_path), path(read2_path)
-
-    //output:
-    //tuple val(key), path("${key}_blue_MERGED.fastq"), emit: merged_blue
-
-    //script:
-    //"""
-    //conda activate bbmerge
-    //bbmerge.sh -in1=${read1_path} -in2=${read2_path} \
-        //-out="${key}_blue_MERGED.fastq" \
-        //-outu1="${key}_blue_R1_REJECTED.fastq" \
-        //-outu2="${key}_blue_R2_REJECTED.fastq"
-    //"""
-//}
-
-// Merge Reads - Red
-//process merge_reads_red {
-
-    //publishDir path: "${params.out_dir_merge_red}", mode: 'copy', overwrite: true
-
-    //input:
-    //tuple val(key), path(read1_path), path(read2_path)
-
-    //output:
-    //tuple val(key), path("${key}_red_MERGED.fastq"), emit: merged_red
-
-    //script:
-    //"""
-    //conda activate bbmerge
-    //bbmerge.sh -in1=${read1_path} -in2=${read2_path} \
-        //-out="${key}_red_MERGED.fastq" \
-        //-outu1="${key}_red_R1_REJECTED.fastq" \
-        //-outu2="${key}_red_R2_REJECTED.fastq"
-    //"""
-//}
-
-// Trim Reads - Blue
-process trim_reads_blue {
+process trim_reads {
 
     //publishDir path: "${params.out_dir_trim_blue}", mode: 'copy', overwrite: true
 
     input:
-    tuple val(key), path(merged_blue)
+    //tuple val(key), path(mergedreads)
+	path(mergedreads)
 
     output:
     // edited to only emit path, rather than tuple with key and path
-    path ("*_TRIMMED*"), emit: trimmed_blue_path
+    //path("trimmed_${mergedreads.baseName}.fastq"), emit: trimmed
+    path ("trimmed*"), emit: trimmed
 
     script:
+	def basefilename = mergedreads.baseName
     """
-    conda activate htstream 
-    out_file="\$(echo ${merged_blue} | sed s'/_MERGED.fastq/_TRIMMED/')"
-    hts_Primers -U "${merged_blue}" -f "\${out_file}" \
-    -P "${params.forward_primers}" -Q "${params.reverse_primers}" -l 5 -x -e 6 -d 6 -F
+    out_file="\$(echo ${mergedreads} | sed s'/merged/trimmed/')"
+    hts_Primers -U $mergedreads -f "\${out_file}" \
+    -P $params.forward_primers -Q $params.reverse_primers -l 5 -x -e 6 -d 6 -F
     """
-
 }
 
 //process trim_reads_red {
