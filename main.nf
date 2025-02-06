@@ -9,7 +9,7 @@ params.rawfastqs_R12 = '/projects/bgmp/shared/groups/2024/novel-fluor/shared/raw
 //params.out_dir_merge_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/NovaSeq_merged/blue"
 //params.out_dir_merge_red = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/NovaSeq_merged/red"
 
-//params.out_dir_trim_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/trimmed_blue"
+params.out_dir = "/projects/bgmp/shared/groups/2024/novel-fluor/wesg/BGMP2024_novel-fluor/outputs"
 //params.out_dir_trim_red = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/trimmed_red"
 
 //params.out_dir_counts_blue = "/projects/bgmp/shared/groups/2024/novel-fluor/malm/illu-dat/counts_blue"
@@ -79,24 +79,20 @@ process merge_reads {
 
 process trim_reads {
 
-    //publishDir path: "${params.out_dir_trim_blue}", mode: 'copy', overwrite: true
+	publishDir path: params.out_dir, mode: 'copy', overwrite: true
 
-    input:
-    //tuple val(key), path(mergedreads)
+	input:
 	path(mergedreads)
 
-    output:
-    // edited to only emit path, rather than tuple with key and path
-    //path("trimmed_${mergedreads.baseName}.fastq"), emit: trimmed
-    path ("trimmed*"), emit: trimmed
+	output:
+    	path ("trimmed*"), emit: trimmed
 
-    script:
-	def basefilename = mergedreads.baseName
-    """
-    out_file="\$(echo ${mergedreads} | sed s'/merged/trimmed/')"
-    hts_Primers -U $mergedreads -f "\${out_file}" \
-    -P $params.forward_primers -Q $params.reverse_primers -l 5 -x -e 6 -d 6 -F
-    """
+    	script:
+    	"""
+    	out_file="\$(echo ${mergedreads} | sed s'/merged/trimmed/')"
+    	hts_Primers -U $mergedreads -f "\${out_file}" \
+    	-P $params.forward_primers -Q $params.reverse_primers -l 5 -x -e 6 -d 6 -F
+    	"""
 }
 
 //process trim_reads_red {
