@@ -1,3 +1,7 @@
 *.fq
 *.fastq
 *.ccs
+work
+*.swp
+.nextflow*
+countbins
