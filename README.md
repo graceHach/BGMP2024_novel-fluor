@@ -6,10 +6,12 @@ Created for Dr. Calin Plesa
 
 ## Nextflow Inputs: 
 
-Address to dir containing binned Illumina data in `fastq.gz` format.
+`--infq`: Address to dir containing binned Illumina data in `fastq.gz` format.
 This address must specify paired-end data as such: `*_R{1,2}*.fastq.gz`
 
-Must also specify primer sequences for removal with htseq
+`--fwd` and `--rev`: Specify forward and revers primer sequences respectively for removal with htseq.
+
+`--out`: output directory to publish merged and trimmed outputs, and result counts file `counts.tsv`.
 
 ## Dependencies: 
 
