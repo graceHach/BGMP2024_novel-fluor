@@ -5,3 +5,4 @@ work
 *.swp
 .nextflow*
 countbins
+outputs/
