@@ -1,20 +1,20 @@
 ////////////////////////////// PARAMETERS //////////////////////////////
 
 // default use the red dataset 
-params.rawfastqs_R12 = '/projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/NovaSeq_GC3F_7124/*_R{1,2}_001.fastq.gz'
-// point this to dir with fastq.gz data, both reads 1 and 2. Example: dir/*_R{1,2}.fastq.gz
+params.infq = '/projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/NovaSeq_GC3F_7124/*_R{1,2}_001.fastq.gz'
+// point this to dir with fastq.gz data, both reads 1 and 2. Example: dir/*_R{1,2}_*.fastq.gz
 
-params.out_dir = "$baseDir/outputs"
-params.forward_primers = "$baseDir/primers/CVR205stub_FWD.fasta"
-params.reverse_primers = "$baseDir/primers/CVR205stub_REV.fasta"
+params.fwd = "$baseDir/primers/CVR205stub_FWD.fasta"
+params.rev = "$baseDir/primers/CVR205stub_REV.fasta"
+params.out = "$baseDir/outputs"
 
-COUNTS_SCRIPT = "$baseDir/src/generate_counts_better.py"
+COUNTS_SCRIPT = "$baseDir/src/generate_counts_v2.py"
 
 ////////////////////////////// WORKFLOW //////////////////////////////
 
 workflow {
 
-	binreads = Channel.fromFilePairs( params.rawfastqs_R12 ) 
+	binreads = Channel.fromFilePairs( params.infq ) 
 
 	merge_reads( binreads ) 
 
@@ -49,7 +49,7 @@ process merge_reads {
 
 process trim_reads {
 
-	publishDir path: params.out_dir, mode: 'copy', overwrite: true
+	publishDir path: params.out, mode: 'copy', overwrite: true
 
 	input:
 	path(mergedreads)
@@ -61,14 +61,14 @@ process trim_reads {
     	"""
     	out_file="\$(echo ${mergedreads} | sed s'/merged/trimmed/')"
     	hts_Primers -U $mergedreads -f "\${out_file}" \
-    	-P $params.forward_primers -Q $params.reverse_primers -l 5 -x -e 6 -d 6 -F
+    	-P $params.fwd -Q $params.rev -l 5 -x -e 6 -d 6 -F
     	"""
 }
 
 //Generate tsv count files 
 process generate_counts {
 
-    publishDir path: "${params.out_dir}", mode: 'copy', overwrite: true
+    publishDir path: params.out, mode: 'copy', overwrite: true
 
     input:
     path trimmed_path
