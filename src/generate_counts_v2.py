@@ -1,33 +1,25 @@
-#!/usr/bin/env python3
-# 3 IS NECESSARY FOR EXECUTATION IN NEXTFLOW
+#!/usr/bin/env python
 
 import argparse
 import gzip
 import numpy as np
 
-# Run using helper script generate_counts.sh
-
-# input directory, output directory 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f","--file_list", nargs='+')
-    parser.add_argument("-o","--out_file",type=str,help="", default="../reports/blue_counts_better_script.tsv")
+    parser.add_argument("-f","--file_list", nargs='+', type=str)
+    parser.add_argument("-o","--out_file", type=str, help="", default="../reports/blue_counts_better_script.tsv")
     return parser.parse_args()
 
 args = get_args()
+files = args.file_list # files == ['file2 file3 file1 file4']
+files = sorted(files[0].split()) # files == ['file1', 'file2', 'file3', 'file4']
 
 not_20_bp = 0
-# read in intermmediate file, initialize the dictionary
 print("initializing counts dict", flush=True)
 counts = {} 
-# keys are UMIs, values are numpy arrays with nine entries
+# keys are UMIs, values are numpy arrays with num_bins entries
 
-#files = glob.glob(args.in_dir+"*.fastq.gz")
-# glob puts these in a weird order 
-# args.file_list is a list with one entry
-files_list = sorted(args.file_list[0].split())
-# sort the files???
-for file_index, file in enumerate(files_list):
+for file_index, file in enumerate(files):
     print("processing: ",file, flush=True)
     with gzip.open(file, 'rt') as fh:
         for index, line in enumerate(fh):
@@ -36,15 +28,13 @@ for file_index, file in enumerate(files_list):
                     if line[:-1] in counts:
                         counts[line[:-1]][file_index] += 1
                     else:
-                        # I USED INT8 INITIALLY AND IT FRICKING UNDERFLOWED AND HALF THE NUMBERS WERE NEGATIVE AAAAAUGH
-                        # 4.5 HOUR RUNTIME 
                         counts[line[:-1]] = np.zeros(9, dtype="int64")
                         counts[line[:-1]][file_index] = 1
                 else:
                     not_20_bp += 1
 
 # write list of file names as header of file
-header_line = "Barcode\t" + '\t'.join(files_list) + "\n"
+header_line = "Barcode\t" + '\t'.join(files) + "\n"
 
 print("Starting writing")
 keys = counts.keys()
