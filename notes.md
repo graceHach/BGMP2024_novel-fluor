@@ -43,3 +43,55 @@ CPU hours   : 139.0
 Succeeded   : 19
 
 ```
+
+# Running this pipeline
+
+The following commands do not specify the `--fwd` and `--rev` primer files. Either edit the existing files to contain accurate primer sequences or specify with the fwd and rev options. 
+
+```
+$ nextflow main.nf --infq "../../shared/rawdata/BLUE/NovaSeq_GC3F_7125/blue-sort_bin*_R{1,2}_001.fastq.gz" --ou
+t blue_out/
+
+ N E X T F L O W   ~  version 24.10.4
+
+Launching `main.nf` [happy_pauling] DSL2 - revision: 80689b1676
+
+[ac/a10bdb] merge_reads (3) | 9 of 9 ✔
+[5a/85de6c] trim_reads (8)  | 9 of 9 ✔
+[04/592688] generate_counts | 1 of 1 ✔
+Completed at: 16-Feb-2025 21:51:38
+Duration    : 1d 10h 40m 54s
+CPU hours   : 197.9
+Succeeded   : 19
+```
+
+and
+
+```
+$ nextflow main.nf --infq '../../shared/rawdata/RED/NovaSeq_GC3F_7124/red-sort_bin*_R{1,2}_001.fastq.gz' --out red_out/
+
+ N E X T F L O W   ~  version 24.10.4
+
+Launching `main.nf` [exotic_visvesvaraya] DSL2 - revision: 80689b1676
+
+executor >  local (9)
+[1b/e0b2f9] merge_reads (2) | 2 of 9
+executor >  local (11)
+[1b/e0b2f9] merge_reads (2) | 2 of 9
+executor >  local (11)
+[1b/e0b2f9] merge_reads (2) | 2 of 9
+executor >  local (11)
+[1b/e0b2f9] merge_reads (2) | 2 of 9
+[99/f9a077] merge_reads (7) | 3 of 9
+[a6/9181a6] trim_reads (3)  | 2 of 3
+[99/f9a077] merge_reads (7) | 3 of 9
+[a6/9181a6] trim_reads (3)  | 2 of 3
+[63/50f7f0] merge_reads (4) | 9 of 9 ✔
+[3e/291a75] trim_reads (9)  | 9 of 9 ✔
+[03/40d99b] generate_counts | 1 of 1 ✔
+Completed at: 17-Feb-2025 06:56:24
+Duration    : 1d 19h 49m 23s
+CPU hours   : 139.0
+Succeeded   : 19
+```
+
