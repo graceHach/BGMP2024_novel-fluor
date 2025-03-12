@@ -25,7 +25,11 @@ def get_args():
     parser.add_argument("-c",'--color_list', nargs='+', type=str, 
                         help='space-separated list of colors corresponding to illumina_counts_files/prot_csv_paths. Used for labeling dataframes',
                         default=["blue red"])
-    parser.add_argument("-o","--out_file", type=str, help="", default="../reports/complete_fluorescence_estimation.csv")
+    parser.add_argument("-o","--out_file", type=str, help="", default="../reports/protein_counts_and_MEFL_FINAL.csv")
+    parser.add_argument("-b",'--bin_calibration', nargs='+', type=str, 
+                        help='Paths to tsv files containing bin to MEFL calibration data. 1st column bin (unused), 2nd column min_MEFL, 3rd column \
+                        max_MEFL. Note that the color order must match color_list and prot_csv_paths. Expects header: "Bin   min_MEFL	max_MEFL"',
+                        default=["../bins/blue_bins.tsv ../bins/red_bins.tsv"])
     return parser.parse_args()
 
 args = get_args()
@@ -69,8 +73,7 @@ prot_paths = args.prot_csv_paths # formatted as ['file2 file3 file1 file4']
 # In same order as prot_csv_paths, color_list
 prot_paths = prot_paths[0].split() # formatted as ['file1', 'file2', 'file3', 'file4']
 
-# Get a dict of all barcodes from pandas dataframe
-#blu_bc_to_prot = {key:"" for key in df['barcode']}
+# Get a set of all Illumina barcodes from dataframe
 illumina_bcs = set(df['barcode'])
 # Initialize each barcode to an empty string
 
@@ -82,16 +85,16 @@ in_pacbio_not_illu = 0
 what = 0
 # list of list of dicts:
 # outer list is each color, inner list is each bin
+# keys are barcodes (read from pacbio data) and values are protein sequences
 list_of_dicts = []
 # Note that each path is a color, each file is a bin
 for color_index, path in enumerate(prot_paths):
     # add a new empty list corresponding to each color
-    print("color ind", color_index)
     list_of_dicts.append([])
     files = sorted(list(glob.glob(path+"*")))
     # Each file is a bin. They are zero-indexed (in terms of bin labels) and in csv format.
     for file in files:
-        print(file)
+        print("processing",file)
         # create new empty dict for the bin
         bc_to_prot = {}
         # Column 0 is bc, column 3 is protein sequence
@@ -110,7 +113,7 @@ for color_index, path in enumerate(prot_paths):
                 in_pacbio_not_illu += 1
         list_of_dicts[color_index].append(bc_to_prot)
 
-# unpack list of dicts, first merging each bin 
+# unpack list of dicts, first merging each bin within a given color
 # This will be a list of <number of colors> list of dicts
 second_list_of_dicts = []
 for color in list_of_dicts:
@@ -171,6 +174,8 @@ final_df.fillna(0, inplace=True)
 # which was done above
 
 # iterate over colors, getting norm counts columns and adding tot num reads, normalized total column
+# not that the row order is conserved between these dataframes and final_df, so they correspond to the 
+# same proteins
 list_of_color_df = []
 for color_label in color_list:
     # get column labels for a given color
@@ -193,7 +198,7 @@ for color_label in color_list:
 
 ############################### MATRIX MANIPULATION ON NORMALIZED COUNTS ############################### 
 
-# This script replaces counts_matrix_manipulation.py
+# This part of the script replaces counts_matrix_manipulation.py
 # Based on preliminary r script by Andrew Holston, who is the best.
 
 # Define functions
@@ -210,7 +215,6 @@ def maxcs(df):
     maxcs = function(x, output){
     return(max(which(c(x[1],x[2],x[3],x[4],x[5],x[6]) < 0.5)))
     }
-    Some of these
     """
     logical=df<0.5
     logical_arr = logical.to_numpy()
@@ -222,30 +226,6 @@ def maxcs(df):
         if true_indices.size > 0:
             last_indices[index] = true_indices[-1]  # Get the last index
     return last_indices
-
-def calc_median(cumulative_As, upper_index, lower_index):
-    """
-    Input:
-        cumulative_As - numpy matrix of cumulative A values, each row is analagous to cumulative_p
-
-    Output:
-
-    Replaces:
-    median = ifelse(
-      is.infinite(lower_index), 
-      1, 
-      lower_index + (0.5 - unlist(cumulative_p)[lower_index]) / 
-        (unlist(cumulative_p)[upper_index] - unlist(cumulative_p)[lower_index])
-    )
-    """
-    cumulative_As = cumulative_As.to_numpy()
-    medians = np.zeros(cumulative_As.shape[0])
-    for index, row in enumerate(cumulative_As):
-        if not lower_index[index]:
-            medians[index] = 1
-        else:
-            medians[index] = lower_index[index] + (0.5 - row[lower_index[index]])/(row[upper_index[index]] - row[lower_index[index]])
-    return medians 
 
 def mincs(df):
     """
@@ -267,9 +247,40 @@ def mincs(df):
             last_indices[index] = true_indices[0]  # Get the first index
     return last_indices
 
-print("got this far")
+def calc_median(cumulative_As, upper_index, lower_index):
+    """
+    Input:
+        cumulative_As - dataframe of cumulative A values, each row is analagous to cumulative_p
+
+    Output:
+
+    Replaces:
+    median = ifelse(
+      is.infinite(lower_index), 
+      1, 
+      lower_index + (0.5 - unlist(cumulative_p)[lower_index]) / 
+        (unlist(cumulative_p)[upper_index] - unlist(cumulative_p)[lower_index])
+    )
+    """
+    cumulative_As = cumulative_As.to_numpy()
+    medians = np.zeros(cumulative_As.shape[0])
+    for index, row in enumerate(cumulative_As):
+        # if the lower index is set to none, all entries are above or equal to 0.5
+        # if the upper index is set to none, all entries are less than 
+        if not lower_index[index]:
+            # if the lower index is None (unset by maxcs, set to 1)
+            medians[index] = 1
+        elif not upper_indices[index]:
+            # if the upper index is None, lower index is the max index and there's nothing to interpolate
+            # between
+            medians[index] = lower_index[index]
+        else:
+            medians[index] = lower_index[index] + (0.5 - row[lower_index[index]])/(row[upper_index[index]] - row[lower_index[index]])
+    return medians 
+
 # Iterate pandas dataframes, representing each color
-for df in list_of_color_df:
+median_bin_labels = []
+for color_label, df in zip(color_list, list_of_color_df):
     # Columns are:
     #       0 - norm_count_1
     #       num_bins-1 - norm_count_n_bins 
@@ -287,15 +298,58 @@ for df in list_of_color_df:
     # axis=1 sums across rows 
     df["rowsum"] = df[fc_col_labels].sum(axis=1)
     for index, fc_col in enumerate(fc_col_labels):
-        df["A"+str(index+1)] = df[fc_col_labels]/df['rowsum']
+        df["A"+str(index+1)] = df[fc_col]/df['rowsum']
 
-    '''
-    # Create new dataframe proteinAcs, or the A columns, but as cumulative sums of current and prev columns
+    #Create new dataframe cumulative_As (previously called protein Acs) from 
+    # the A columns, but as cumulative sums of current and prev columns
     cumulative_As = pd.DataFrame()
-    A_cols = ["A"+str(i) for i in range(1,n_bins+1)]
-    for i in range(1,n_bins+1):
-        #print(A_cols[0:i])
-        cumulative_As["A_"+str(i)+"_cs"] = in_df[A_cols[0:i]].sum(axis=1)
-    '''
-    
+    A_cols = ["A"+str(i) for i in range(1,num_bins+1)]
+    for i in range(1,num_bins+1):
+        # summing down rows to create new column with cumulative As
+        cumulative_As["A_"+str(i)+"_cs"] = df[A_cols[0:i]].sum(axis=1)
 
+    # get vectors of the row indices that bookend 0.5 
+    #  not a typo - macs gives lower index, mincs is gives upper
+    # Some of these end up set to None. calc_median accounts for this
+    lower_indices = maxcs(cumulative_As)
+    upper_indices = mincs(cumulative_As)
+    
+    # at long last, add median bin to the final df
+    final_df[color_label+"_median_bin"] = calc_median(cumulative_As,upper_indices,lower_indices)
+    # and store the bin label
+    median_bin_labels.append(color_label+"_median_bin")
+
+############################### MEDIAN BIN TO MEFL ############################################################## 
+
+# This replaces the script bins_to_MEF.py/.sh and does the final export
+
+calibration_files = args.bin_calibration
+calibration_files = calibration_files[0].split()
+
+for median_col_label, file in zip(median_bin_labels, calibration_files):
+    
+    
+    bin_boundaries = pd.read_csv(file, sep='\t')
+    mef_col_label = median_col_label.split("_")[0]+"_MEFL" # <color>_MEFL
+
+    # Convert to list where index + 1 = bin
+    # Calcualted for a given bin as bin_minimum + (bin max - bin min) * fractional part of median bin
+    # Had trouble with strict pandas implementation 
+    min_bins_list = list(bin_boundaries["min_MEFL"])
+    max_bins_list = list(bin_boundaries["max_MEFL"])
+    medians_list = final_df[median_col_label]
+    medians_MEF = []
+    for median in medians_list:
+        median_index = int(median) - 1
+        median_MEF = min_bins_list[median_index] + (max_bins_list[median_index] - min_bins_list[median_index])*(median%1)
+        medians_MEF.append(median_MEF)
+
+    # Create new column with MEF
+    final_df[mef_col_label] = medians_MEF
+    
+# Remove undesired columns (median columns, barcode) and export file
+for median_col_label in median_bin_labels:
+    final_df.drop(median_col_label, axis=1, inplace=True)
+
+final_df.drop("barcode", axis=1, inplace=True)
+final_df.to_csv(args.out_file, index=False)
