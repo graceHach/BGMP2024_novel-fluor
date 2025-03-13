@@ -48,6 +48,14 @@ Note that this defaults to the primers provided along with this repo in the prim
 ```
 nextflow main.nf --color_label "<COLOR>" --infq "<DIRECTORY CONTAINING BLUE ILLUMINA DATA>/*_R{1,2}_001.fastq.gz" --fwd "<FORWARD PRIMER FILE>" --rev "<REVERSE PRIMER FILE>"
 ```
+This will output the file(s) <COLOR>_counts.tsv in the output directrory.
 
-This will output 
+## Running Fluorescence Estimation
+
+The script complete_fluorescence_estimation.py integrates the two datasets and produces the final output: A csv file containing the protein 
+sequences, bin distribution in all colors, and estimated fluorescence in all colors. The script is written to use an arbitrary number of bins 
+and colors. It takes the following arguments:
+
+```
+
 ```
