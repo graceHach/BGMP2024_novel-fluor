@@ -1,9 +1,11 @@
 ////////////////////////////// PARAMETERS //////////////////////////////
 
-// default use the red dataset 
-params.infq = '/projects/bgmp/shared/groups/2024/novel-fluor/shared/rawdata/RED/NovaSeq_GC3F_7124/*_R{1,2}_001.fastq.gz'
+// CHANGE THIS DIRECTORY, OR SPECIFY ON THE COMMAND LINE
+params.infq = '/projects/bgmp/shared/groups/2024/novel-fluor/ghach/BGMP2024_novel-fluor/mini_illum/red/*_R{1,2}_001.fastq.gz'
 // point this to dir with fastq.gz data, both reads 1 and 2. Example: dir/*_R{1,2}_*.fastq.gz
 
+// CHANGE THIS PARAMETER, OR SPECIFY ON THE COMMAND LINE - used to label outputs file
+params.color_label = "red"
 params.fwd = "$baseDir/primers/CVR205stub_FWD.fasta"
 params.rev = "$baseDir/primers/CVR205stub_REV.fasta"
 params.out = "$baseDir/outputs"
@@ -74,12 +76,12 @@ process generate_counts {
     path trimmed_path
 
     output:
-    path "counts.tsv", emit: counts
+    path "${params.color_label}_counts.tsv", emit: counts
 
     script:  
     """
     $COUNTS_SCRIPT \
          --file_list "${trimmed_path}" \
-         --out_file "counts.tsv"
+         --out_file "${params.color_label}_counts.tsv"
     """
 }
