@@ -1,25 +1,25 @@
 #!/usr/bin/env python
 
 import argparse
-import gzip
 import glob
 import numpy as np
 import pandas as pd
 
 '''
-Downstream of generate_counts_v2.py
-Replaces generate_protein_counts.py, counts_matrix_manipulation.py, and bins_to_MEF.py.
-Replaces estimate_fluorescence.sh, with fully python implementation
+This file is run after the Illumina processing pipeline (main.nf in this repo), and the pacbio pipeline.
+It takes the UMI variant pairs from the PacBio data, merges it by bin and than by color, gets the counts distribution
+from the Illumina data, calculates the median bin, and converts to units of MEFL using a calibration file.
+It outputs a file with protein sequence, bin distribution in both colors, and estimated fluorescence in both colors.
 '''
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("-if","--illumina_counts_files", nargs='+', type=str, default=["../reports/blue_counts.tsv ../reports/red_counts.tsv"],
-                        help="Paths to Illumina counts files in tsv format as output by generate_counts_v2.py. Must be as many counts files as \
+    parser.add_argument("-if","--illumina_counts_files", nargs='+', type=str, default=["../outputs/blue_counts.tsv ../outputs/red_counts.tsv"],
+                        help="Paths to Illumina counts files in tsv format as output by generate_counts_v2.py/main.nf. Must be as many counts files as \
                             there are colors. Format as space-separated list (see default)")
     parser.add_argument("-p",'--prot_csv_paths', nargs='+', type=str, 
-                        help='Paths to input csv files as space separated list. 1st column barcodes, 3rd column variant sequences, 4th column \
-                        protein sequence. must be as many paths as there are count files/colors above.',
+                        help='Paths to input csv (output from pacbio pipeline) files as space separated list. 1st column barcodes, 3rd column variant \
+                        sequences, 4th column protein sequence. must be as many paths as there are count files/colors above.',
                         default=["../../../shared/dat/NF_results/BLUE/09_final_output/ ../../../shared/dat/NF_results/RED/09_final_output/"])
                         # trailing slashes are totally necessary in above paths, IDK why
     parser.add_argument("-c",'--color_list', nargs='+', type=str, 

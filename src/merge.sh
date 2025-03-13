@@ -1,19 +1,16 @@
 #!/bin/bash
 
-#SBATCH --partition=bgmp
-#SBATCH --account=bgmp
+#SBATCH --partition=<SPECIFY PARTITION>
+#SBATCH --account=<SPECIFY PARTITION>
 #SBATCH --job-name=merge_reads
 #SBATCH --output=LOG/merge_reads_%j.out
 #SBATCH --error=LOG/merge_reads_%j.err
 #SBATCH --time=1-00:00:00            
 #SBATCH --nodes=5                  
 #SBATCH --cpus-per-task=5
-#SBATCH --mail-type=BEGIN,END
-#SBATCH --mail-user=ghach@uoregon.edu
 
-conda activate bbmerge
-# I really feel like this should be condensed into a script run multiple times with command line arguments
-# but I just want to get it working first
+# set up this environment according to setup directions
+conda activate ../countbins/
 
 set -ue                               # stop on error, if unset variable is accessed
 # trailing forward slash on these is not optional, and IDK why
