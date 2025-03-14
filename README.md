@@ -94,4 +94,4 @@ Paths to TSV files containing bin-to-MEFL calibration data. Each file must have 
 
 ## Troubleshooting
 
-If issues are encountered or calrifiaction is needed, please reach out to me at ghach@uoregon.edu for support.
+If issues are encountered or clarification is needed, please reach out to me at ghach@uoregon.edu for support.
